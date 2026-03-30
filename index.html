@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VIETLOTT LUCKY AI - Dự Đoán Số May Mắn</title>
+    <meta name="description" content="Ứng dụng AI dự đoán số may mắn VIETLOTT Mega 6/45 và Power 6/55 dựa trên dữ liệu thực 100 kỳ quay kết hợp tên và ngày sinh.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6C63FF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+    <!-- Floating particles background -->
+    <div class="particles" id="particles"></div>
+
+    <!-- API Key Modal -->
+    <div class="modal-overlay" id="apiModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-row">
+                    <span class="modal-icon">🔑</span>
+                    <h3 class="modal-title">Gemini API Key</h3>
+                </div>
+                <button class="modal-close" onclick="closeApiModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-desc">Nhập API Key của Google Gemini để sử dụng AI thực sự phân tích dữ liệu và dự đoán số may mắn.</p>
+                <div class="modal-input-group">
+                    <label class="modal-label">API Key</label>
+                    <div class="modal-input-wrapper">
+                        <input 
+                            type="password" 
+                            id="apiKeyInput" 
+                            class="modal-input" 
+                            placeholder="AIzaSy..."
+                            spellcheck="false"
+                        >
+                        <button class="toggle-eye" id="toggleEye" onclick="toggleApiKeyVisibility()">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-info">
+                    <span>💡</span>
+                    <span>Lấy API Key miễn phí tại <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com</a></span>
+                </div>
+                <div class="modal-model-info">
+                    <span class="model-chip">⚡ gemini-2.5-flash</span>
+                    <span class="model-desc">Nhanh • Thông minh • Miễn phí</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn-secondary" onclick="clearApiKey()">Xóa Key</button>
+                <button class="modal-btn-primary" onclick="saveApiKey()">💾 Lưu Key</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal-overlay" id="helpModal">
+        <div class="modal-card help-card">
+            <div class="modal-header">
+                <div class="modal-title-row">
+                    <span class="modal-icon">📖</span>
+                    <h3 class="modal-title">Hướng Dẫn & Giới Thiệu</h3>
+                </div>
+                <button class="modal-close" onclick="closeHelp()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="help-section">
+                    <h4>✨ Giới Thiệu</h4>
+                    <p><b>VIETLOTT LUCKY</b> là trợ lý thông minh giúp bạn tìm kiếm những con số may mắn. App kết hợp giữa:</p>
+                    <ul>
+                        <li>Dữ liệu thực tế của 100 kỳ quay gần nhất.</li>
+                        <li>Thuật toán Thần số học dựa trên Tên và Ngày sinh.</li>
+                        <li>Trí tuệ nhân tạo (AI) Gemini 2.5 Flash để phân tích chuyên sâu.</li>
+                    </ul>
+                </div>
+                <div class="help-section">
+                    <h4>🚀 Cách Sử Dụng</h4>
+                    <ol>
+                        <li><b>Nhập thông tin:</b> Điền Họ tên và Ngày sinh để AI lấy "vía" may mắn cá nhân.</li>
+                        <li><b>Chọn loại vé:</b> Nhấn <b>MEGA</b> (6/45) hoặc <b>POWER</b> (6/55) để bắt đầu dự đoán.</li>
+                        <li><b>Xem kết quả:</b> AI sẽ tính toán và hiển thị 6 con số kèm theo lời giải thích thú vị.</li>
+                        <li><b>API Key:</b> Nhấp biểu tượng chìa khóa 🔑 để nhập Gemini API Key của riêng bạn (nếu có) để AI thông minh hơn.</li>
+                    </ol>
+                </div>
+                <div class="help-section info-tip">
+                    <span>💡 <b>Mẹo:</b> Bạn có thể đổi giao diện sáng/tối bằng biểu tượng Mặt trăng/Mặt trời ở góc trên app.</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn-primary full-width" onclick="closeHelp()">Đã Hiểu!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <!-- Header Controls -->
+            <div class="header-controls">
+                <button class="control-btn theme-btn" id="themeBtn" onclick="toggleTheme()" title="Đổi giao diện">
+                    <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M17.66 6.34l1.42-1.42"/></svg>
+                    <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                </button>
+                <button class="control-btn help-btn" onclick="openHelp()" title="Hướng dẫn sử dụng">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3m0 4h.01"/></svg>
+                </button>
+                <!-- API Key Button -->
+                <button class="api-key-btn" id="apiKeyBtn" onclick="openApiModal()" title="Cài đặt API Key">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                    </svg>
+                    <span class="api-status-dot" id="apiStatusDot"></span>
+                </button>
+            </div>
+            
+            <div class="logo-wrapper">
+                <div class="logo-icon">
+                    <span class="logo-star">★</span>
+                </div>
+                <h1 class="app-title">VIETLOTT LUCKY</h1>
+                <div class="ai-badge-wrapper">
+                    <span class="ai-badge" id="aiBadge">🧠 AI PREDICTION</span>
+                </div>
+                <p class="app-subtitle">Dữ liệu thực 100 kỳ + Gemini AI</p>
+            </div>
+        </header>
+
+        <!-- Input Section -->
+        <section class="input-section">
+            <div class="input-card">
+                <div class="input-group">
+                    <label for="userName" class="input-label">
+                        <span class="label-icon">👤</span>
+                        Họ và Tên
+                    </label>
+                    <input 
+                        type="text" 
+                        id="userName" 
+                        class="input-field" 
+                        placeholder="Nhập họ và tên của bạn..."
+                        autocomplete="name"
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label for="userDob" class="input-label">
+                        <span class="label-icon">🎂</span>
+                        Ngày Sinh
+                    </label>
+                    <input 
+                        type="date" 
+                        id="userDob" 
+                        class="input-field" 
+                        placeholder="Chọn ngày sinh"
+                    >
+                </div>
+            </div>
+        </section>
+
+        <!-- Game Mode Selection -->
+        <section class="mode-section">
+            <h2 class="section-title">Chọn loại vé</h2>
+            <div class="mode-buttons">
+                <button class="mode-btn mega-btn" id="megaBtn" onclick="predict('mega')">
+                    <div class="btn-glow"></div>
+                    <div class="btn-content">
+                        <span class="btn-badge">MEGA</span>
+                        <span class="btn-range">6/45</span>
+                        <span class="btn-desc">Số từ 01 - 45</span>
+                    </div>
+                    <div class="btn-shimmer"></div>
+                </button>
+
+                <button class="mode-btn power-btn" id="powerBtn" onclick="predict('power')">
+                    <div class="btn-glow"></div>
+                    <div class="btn-content">
+                        <span class="btn-badge">POWER</span>
+                        <span class="btn-range">6/55</span>
+                        <span class="btn-desc">Số từ 01 - 55</span>
+                    </div>
+                    <div class="btn-shimmer"></div>
+                </button>
+            </div>
+        </section>
+
+        <!-- Latest Draw Results Section -->
+        <section class="draws-section" id="drawsSection">
+            <div class="draws-card">
+                <div class="draws-header">
+                    <h2 class="draws-title">
+                        <span>🏆</span> Kết Quả Xổ Số
+                    </h2>
+                </div>
+                <div class="draws-tabs">
+                    <button class="draws-tab active" id="tabMega" onclick="showDrawResults('mega')">
+                        <span class="tab-dot mega-dot"></span> Mega 6/45
+                    </button>
+                    <button class="draws-tab" id="tabPower" onclick="showDrawResults('power')">
+                        <span class="tab-dot power-dot"></span> Power 6/55
+                    </button>
+                </div>
+                <div class="draws-list" id="drawsList">
+                    <div class="draws-loading">
+                        <div class="draws-spinner"></div>
+                        <span>Nhấn tab để xem kết quả...</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Result Section (hidden by default) -->
+        <section class="result-section" id="resultSection">
+            <div class="result-card" id="resultCard">
+                <div class="result-header">
+                    <span class="result-type" id="resultType"></span>
+                    <span class="result-date" id="resultDate"></span>
+                </div>
+
+                <div class="result-user" id="resultUser"></div>
+                
+                <div class="data-badge online" id="dataBadge"></div>
+
+                <div class="lucky-numbers" id="luckyNumbers">
+                    <!-- Numbers will be injected here -->
+                </div>
+
+                <div class="result-message" id="resultMessage">
+                    <span class="sparkle">✨</span>
+                    <span id="messageText"></span>
+                    <span class="sparkle">✨</span>
+                </div>
+
+                <!-- Stats Panel -->
+                <div class="stats-panel" id="statsPanel" style="display:none;">
+                    <!-- Stats will be injected by JS -->
+                </div>
+
+                <button class="retry-btn" onclick="resetResult()">
+                    <span>🔄</span> Thử lại
+                </button>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>🍀 Chúc bạn may mắn! 🍀</p>
+            <p class="disclaimer">Dữ liệu từ <a href="https://github.com/vietvudanh/vietlott-data" target="_blank" style="color:inherit;opacity:0.6;">vietlott-data</a> • Chỉ mang tính giải trí</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+
+    <!-- Service Worker for PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(reg => {
+                    console.log('SW Registered:', reg.scope);
+                }).catch(err => {
+                    console.log('SW Fail:', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
