@@ -20,7 +20,7 @@ let dataCache = {
 
 // ===== API Key Management =====
 const API_KEY_STORAGE = 'vietlott_gemini_api_key';
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = 'gemini-1.5-flash';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 function getApiKey() {
@@ -113,6 +113,74 @@ function updateApiStatus() {
     } else {
         dot.classList.remove('active');
         if (badge) badge.textContent = '🧠 AI PREDICTION';
+    }
+}
+
+// ===== Dream/Phenomenon Analysis with Gemini =====
+async function callGeminiDreamAI(name, dob, dream, type) {
+    const apiKey = getApiKey();
+    if (!apiKey) return null;
+
+    const today = getTodayFormatted();
+    const typeLabel = type === '2' ? '2 số cuối (00-99)' : '3 số (000-999)';
+    
+    const prompt = `Bạn là chuyên gia giải mã giấc mơ và nhân số học. Hãy phân tích hiện tượng/giấc mơ sau để tìm ra các con số may mắn.
+    
+--- THÔNG TIN ---
+Họ tên: ${name}
+Ngày sinh: ${dob}
+Giấc mơ/Hiện tượng: "${dream}"
+Loại dự đoán yêu cầu: ${typeLabel}
+
+--- YÊU CẦU ---
+1. Phân tích ý nghĩa tâm linh và điềm báo của giấc mơ/hiện tượng này.
+2. Dựa trên phân tích đó, hãy đề xuất:
+   - 4 con số có 2 chữ số (00-99)
+   - 4 con số có 3 chữ số (000-999)
+3. Giải thích tại sao những con số này lại liên quan đến giấc mơ đó.
+
+ĐỊNH DẠNG TRẢ LỜI BẮT BUỘC:
+Dòng 1: 2D_NUMBERS: n1, n2, n3, n4
+Dòng 2: 3D_NUMBERS: m1, m2, m3, m4
+Dòng 3 trở đi: Lời giải mã ngắn gọn, súc tích (tối đa 4-5 dòng).
+
+Ví dụ:
+2D_NUMBERS: 12, 45, 67, 89
+3D_NUMBERS: 123, 456, 789, 012
+Giấc mơ thấy rắn thường liên quan đến con số 32, 72. Tuy nhiên kết hợp với ngày sinh của bạn...`;
+
+    try {
+        const response = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.8,
+                    maxOutputTokens: 600
+                }
+            })
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+        const match2D = text.match(/2D_NUMBERS:\s*([\d,\s]+)/i);
+        const match3D = text.match(/3D_NUMBERS:\s*([\d,\s]+)/i);
+
+        if (match2D && match3D) {
+            const nums2D = match2D[1].split(',').map(n => n.trim().padStart(2, '0')).slice(0, 4);
+            const nums3D = match3D[1].split(',').map(n => n.trim().padStart(3, '0')).slice(0, 4);
+            const explanation = text.replace(/2D_NUMBERS:.*\n?/i, '').replace(/3D_NUMBERS:.*\n?/i, '').trim();
+
+            return { nums2D, nums3D, explanation };
+        }
+        return null;
+    } catch (error) {
+        console.error('Gemini Dream API error:', error);
+        return null;
     }
 }
 
@@ -424,6 +492,26 @@ function generateFallbackNumbers(name, dob, maxNum) {
     return Array.from(numbers).sort((a, b) => a - b);
 }
 
+// ===== Local Lô Đề Generation =====
+function generateLocalLode(name, dob) {
+    const seed = generateSeed(name, dob);
+    const rng = mulberry32(seed);
+    
+    const nums2D = [];
+    while (nums2D.length < 4) {
+        const n = String(Math.floor(rng() * 100)).padStart(2, '0');
+        if (!nums2D.includes(n)) nums2D.push(n);
+    }
+    
+    const nums3D = [];
+    while (nums3D.length < 4) {
+        const n = String(Math.floor(rng() * 1000)).padStart(3, '0');
+        if (!nums3D.includes(n)) nums3D.push(n);
+    }
+    
+    return { nums2D, nums3D, explanation: '' };
+}
+
 // ===== Call Gemini 2.5 Flash API =====
 async function callGeminiAI(name, dob, maxNum, stats, draws) {
     const apiKey = getApiKey();
@@ -711,6 +799,8 @@ function renderStats(stats, mode) {
 }
 
 // ===== Main Prediction Function =====
+
+// ===== Main Prediction Function =====
 async function predict(mode) {
     if (!validateInputs()) return;
     
@@ -718,78 +808,94 @@ async function predict(mode) {
     const dob = document.getElementById('userDob').value;
     const maxNum = mode === 'mega' ? 45 : 55;
     
-    // Show loading with progress
+    resetResult();
     showLoading({ text: '📡 Đang tải dữ liệu Vietlot...', detail: 'Kết nối đến kho dữ liệu', progress: 10 });
     
-    // Step 1: Fetch real data
     let draws = null;
     let stats = null;
     let hasData = false;
     
     try {
         await new Promise(r => setTimeout(r, 500));
-        
-        showLoading({ text: '📥 Đang tải 100 kỳ quay gần nhất...', detail: `Nguồn: GitHub/vietlott-data (${mode === 'mega' ? 'Mega 6/45' : 'Power 6/55'})`, progress: 30 });
-        
+        showLoading({ text: '📥 Đang tải 100 kỳ quay gần nhất...', detail: `Nguồn: GitHub/vietlott-data`, progress: 30 });
         draws = await fetchVietlotData(mode);
-        
         if (draws && draws.length > 0) {
             hasData = true;
-            
-            showLoading({ text: '🔍 Đang phân tích tần suất...', detail: `Phân tích ${draws.length} kỳ quay`, progress: 50 });
-            await new Promise(r => setTimeout(r, 500));
-            
+            showLoading({ text: '🔍 Đang phân tích tần suất...', progress: 50 });
             stats = analyzeFrequency(draws, maxNum);
-        } else {
-            showLoading({ text: '⚠️ Không có dữ liệu online', detail: 'Sử dụng dự đoán theo Thần số học', progress: 50 });
-            await new Promise(r => setTimeout(r, 500));
         }
     } catch (err) {
         console.warn('Data fetch error:', err);
-        showLoading({ text: '⚠️ Lỗi kết nối', detail: 'Sử dụng dự đoán theo Thần số học', progress: 50 });
-        await new Promise(r => setTimeout(r, 500));
     }
     
-    // Step 2: Try Gemini AI if API key is configured
     let numbers = null;
     let aiExplanation = '';
     let predictionSource = hasData ? 'data' : 'fallback';
     
     if (hasApiKey() && hasData) {
-        showLoading({ text: '🧠 Gemini AI đang phân tích...', detail: 'Gửi dữ liệu đến gemini-2.5-flash', progress: 65 });
-        
+        showLoading({ text: '🧠 Gemini AI đang phân tích...', detail: 'Gửi dữ liệu đến gemini-1.5-flash', progress: 65 });
         const geminiResult = await callGeminiAI(name, dob, maxNum, stats, draws);
-        
         if (geminiResult) {
             numbers = geminiResult.numbers;
             aiExplanation = geminiResult.explanation;
             predictionSource = 'gemini';
-            
-            showLoading({ text: '✨ Gemini AI hoàn thành!', detail: 'Đã nhận kết quả từ AI', progress: 90 });
-            await new Promise(r => setTimeout(r, 400));
-        } else {
-            showLoading({ text: '⚡ Sử dụng thuật toán local...', detail: 'Gemini không khả dụng, chuyển sang backup', progress: 80 });
-            await new Promise(r => setTimeout(r, 400));
         }
-    } else if (!hasApiKey()) {
-        showLoading({ text: '🎰 Đang tạo bộ số may mắn...', detail: 'Thêm API Key để dùng Gemini AI', progress: 75 });
-        await new Promise(r => setTimeout(r, 500));
     }
     
-    // Fallback to local algorithm
     if (!numbers) {
         numbers = generateSmartNumbers(name, dob, maxNum, stats);
     }
     
     const seed = generateSeed(name, dob);
-    
-    showLoading({ text: '✨ Hoàn thành!', detail: '', progress: 100 });
+    showLoading({ text: '✨ Hoàn thành!', progress: 100 });
     await new Promise(r => setTimeout(r, 400));
-    
-    // Hide loading
     hideLoading();
     
-    // Populate result
+    renderFinalResult(mode, numbers, predictionSource, name, seed, aiExplanation, stats);
+}
+
+// ===== Lô Đề Prediction Function =====
+async function predictLode(type) {
+    if (!validateInputs()) return;
+    
+    const dream = document.getElementById('dreamInput').value.trim();
+    const name = document.getElementById('userName').value.trim();
+    const dob = document.getElementById('userDob').value;
+
+    if (dream && !hasApiKey()) {
+        openApiModal();
+        showToast('🔑 Vui lòng nhập API Key để sử dụng AI phân tích giấc mơ', 'info');
+        return;
+    }
+
+    resetResult();
+    showLoading({ 
+        text: dream ? '🧠 AI đang giải mã giấc mơ...' : '🎰 Đang tính toán số Lô Đề...', 
+        detail: dream ? 'Phân tích hiện tượng tâm linh' : 'Dựa trên Thần số học',
+        progress: 30 
+    });
+
+    let results = null;
+    let source = dream ? 'gemini' : 'fallback';
+
+    if (dream && hasApiKey()) {
+        results = await callGeminiDreamAI(name, dob, dream, type);
+    } 
+    
+    if (!results) {
+        results = generateLocalLode(name, dob);
+        results.explanation = dream ? 'AI bận, đã sử dụng thuật toán Thần số học để giải mã cho bạn.' : 'Bộ số may mắn được tính toán riêng dựa trên ngày sinh và tên của bạn.';
+        source = 'fallback';
+    }
+
+    showLoading({ text: '✨ Hoàn thành!', progress: 100 });
+    await new Promise(r => setTimeout(r, 400));
+    hideLoading();
+
+    renderFinalLodeResult(results, type, name, source);
+}
+
+function renderFinalResult(mode, numbers, source, name, seed, explanation, stats) {
     const resultSection = document.getElementById('resultSection');
     const resultCard = document.getElementById('resultCard');
     const resultType = document.getElementById('resultType');
@@ -797,202 +903,175 @@ async function predict(mode) {
     const resultUser = document.getElementById('resultUser');
     const luckyNumbersContainer = document.getElementById('luckyNumbers');
     const messageText = document.getElementById('messageText');
-    
-    resultCard.className = `result-card ${mode === 'mega' ? 'mega-result' : 'power-result'}`;
-    resultType.textContent = mode === 'mega' ? 'MEGA 6/45' : 'POWER 6/55';
-    resultDate.textContent = getTodayFormatted();
-    resultUser.textContent = name;
-    messageText.textContent = getRandomMessage(seed, predictionSource);
-    
-    // Update data badge
     const dataBadge = document.getElementById('dataBadge');
-    if (dataBadge) {
-        if (predictionSource === 'gemini') {
-            dataBadge.textContent = `🧠 Gemini AI + ${draws.length} kỳ quay thực tế`;
-            dataBadge.className = 'data-badge online';
-        } else if (hasData) {
-            dataBadge.textContent = `📊 Dựa trên ${draws.length} kỳ quay thực tế`;
-            dataBadge.className = 'data-badge online';
-        } else {
-            dataBadge.textContent = '🔮 Dự đoán theo Thần số học';
-            dataBadge.className = 'data-badge offline';
-        }
-    }
+    const statsPanel = document.getElementById('statsPanel');
+
+    resultSection.classList.add('visible');
+    resultCard.className = `result-card ${mode}-result`;
+    resultType.textContent = mode === 'mega' ? 'Mega 6/45' : 'Power 6/55';
+    resultDate.textContent = getTodayFormatted();
+    resultUser.textContent = `Vận may của: ${name}`;
+    messageText.innerHTML = (explanation || getRandomMessage(seed, source)).replace(/\n/g, '<br>');
     
-    // Render balls
+    if (source === 'gemini') {
+        dataBadge.innerHTML = '✨ Dự đoán bởi Google Gemini AI';
+        dataBadge.className = 'data-badge ai-source';
+    } else if (source === 'data') {
+        dataBadge.innerHTML = '📊 Phân tích 100 kỳ quay + Thần số học';
+        dataBadge.className = 'data-badge online';
+    } else {
+        dataBadge.innerHTML = '🌙 Dự đoán theo Vận mệnh & Thần số học';
+        dataBadge.className = 'data-badge offline';
+    }
+
     luckyNumbersContainer.innerHTML = '';
-    numbers.forEach((num) => {
+    numbers.forEach((num, index) => {
         const ball = document.createElement('div');
         ball.className = 'lucky-ball';
         ball.textContent = String(num).padStart(2, '0');
-        
-        // Mark hot numbers
-        if (hasData && stats) {
-            const numStat = stats.all.find(s => s.number === num);
-            if (numStat) {
-                const rank = stats.all.indexOf(numStat);
-                if (rank < stats.hot.length) {
-                    ball.setAttribute('data-tag', '🔥');
-                    ball.classList.add('is-hot');
-                }
-            }
-        }
-        
+        ball.style.animationDelay = `${index * 0.1}s`;
         luckyNumbersContainer.appendChild(ball);
+        setTimeout(() => ball.classList.add('bounce'), 1200 + (index * 100));
     });
-    
-    // Render Gemini AI explanation if available
-    const existingAiResponse = resultCard.querySelector('.ai-response');
-    if (existingAiResponse) existingAiResponse.remove();
-    
-    if (aiExplanation) {
-        const aiDiv = document.createElement('div');
-        aiDiv.className = 'ai-response';
-        aiDiv.innerHTML = `
-            <div class="ai-response-header">
-                <span>🧠</span> Phân tích từ Gemini AI
-            </div>
-            <div>${aiExplanation.replace(/\n/g, '<br>')}</div>
-        `;
-        const retryBtn = resultCard.querySelector('.retry-btn');
-        resultCard.insertBefore(aiDiv, retryBtn);
-    }
-    
-    // Render stats panel
+
     renderStats(stats, mode);
-    
-    // Show result
-    resultSection.classList.remove('visible');
-    void resultSection.offsetWidth;
-    resultSection.classList.add('visible');
-    
-    // Scroll to result
-    setTimeout(() => {
-        resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-    
-    // Launch confetti
-    setTimeout(() => launchConfetti(), 900);
-    
-    // Add bounce animation
-    setTimeout(() => {
-        document.querySelectorAll('.lucky-ball').forEach(ball => {
-            ball.classList.add('bounce');
-        });
-    }, 1600);
+    launchConfetti();
+    resultSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-// ===== Reset Result =====
+function renderFinalLodeResult(results, type, name, source) {
+    const resultSection = document.getElementById('resultSection');
+    const resultCard = document.getElementById('resultCard');
+    const resultType = document.getElementById('resultType');
+    const resultDate = document.getElementById('resultDate');
+    const resultUser = document.getElementById('resultUser');
+    const luckyNumbersContainer = document.getElementById('luckyNumbers');
+    const messageText = document.getElementById('messageText');
+    const dataBadge = document.getElementById('dataBadge');
+    const statsPanel = document.getElementById('statsPanel');
+
+    resultSection.classList.add('visible');
+    resultCard.className = 'result-card power-result';
+    resultType.textContent = 'Dự Đoán Lô Đề';
+    resultDate.textContent = getTodayFormatted();
+    resultUser.textContent = `Vận may của: ${name}`;
+    messageText.innerHTML = (results.explanation || '').replace(/\n/g, '<br>');
+    
+    if (source === 'gemini') {
+        dataBadge.innerHTML = '🔮 AI Giải Mã Giấc Mơ';
+        dataBadge.className = 'data-badge ai-source';
+    } else {
+        dataBadge.innerHTML = '🎲 Phân tích Thần số học';
+        dataBadge.className = 'data-badge offline';
+    }
+
+    luckyNumbersContainer.innerHTML = '';
+    
+    const createGroup = (nums, label) => {
+        const group = document.createElement('div');
+        group.className = 'lode-result-group';
+        group.style.width = '100%';
+        group.style.marginBottom = '20px';
+        
+        const labelEl = document.createElement('div');
+        labelEl.textContent = label;
+        labelEl.style.fontSize = '14px';
+        labelEl.style.fontWeight = '600';
+        labelEl.style.color = 'var(--text-secondary)';
+        labelEl.style.marginBottom = '12px';
+        group.appendChild(labelEl);
+        
+        const ballsRow = document.createElement('div');
+        ballsRow.style.display = 'flex';
+        ballsRow.style.justifyContent = 'center';
+        ballsRow.style.gap = '12px';
+        ballsRow.style.flexWrap = 'wrap';
+        
+        nums.forEach((num, idx) => {
+            const ball = document.createElement('div');
+            ball.className = 'lucky-ball';
+            ball.textContent = num;
+            if (num.length > 2) {
+                ball.style.width = '64px';
+                ball.style.borderRadius = '32px';
+            }
+            ball.style.animationDelay = `${idx * 0.1}s`;
+            ballsRow.appendChild(ball);
+            setTimeout(() => ball.classList.add('bounce'), 1200 + (idx * 100));
+        });
+        
+        group.appendChild(ballsRow);
+        return group;
+    };
+
+    luckyNumbersContainer.appendChild(createGroup(results.nums2D, '✨ 4 Cặp Số Lô Đề (2 Chữ Số)'));
+    luckyNumbersContainer.appendChild(createGroup(results.nums3D, '✨ 4 Cặp Số Ba Càng (3 Chữ Số)'));
+
+    statsPanel.style.display = 'none';
+    launchConfetti();
+    resultSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 function resetResult() {
     const resultSection = document.getElementById('resultSection');
     resultSection.classList.remove('visible');
-    
-    document.querySelector('.input-section').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('luckyNumbers').innerHTML = '';
+    document.getElementById('statsPanel').style.display = 'none';
 }
 
-// ===== Show Latest Draw Results =====
 async function showDrawResults(mode) {
-    // Update tabs
     document.getElementById('tabMega').classList.toggle('active', mode === 'mega');
     document.getElementById('tabPower').classList.toggle('active', mode === 'power');
-    
     const container = document.getElementById('drawsList');
-    
-    // Show loading
-    container.innerHTML = `
-        <div class="draws-loading">
-            <div class="draws-spinner"></div>
-            <span>Đang tải kết quả ${mode === 'mega' ? 'Mega 6/45' : 'Power 6/55'}...</span>
-        </div>
-    `;
+    container.innerHTML = `<div class="draws-loading"><div class="draws-spinner"></div><span>Đang tải kết quả...</span></div>`;
     
     try {
         const draws = await fetchVietlotData(mode);
-        
         if (!draws || draws.length === 0) {
-            container.innerHTML = `
-                <div class="draws-loading">
-                    <span>⚠️ Không thể tải dữ liệu. Hãy thử lại!</span>
-                </div>
-            `;
+            container.innerHTML = `<div class="draws-loading"><span>⚠️ Không thể tải dữ liệu.</span></div>`;
             return;
         }
         
-        // Display latest 5 draws
         const latest = draws.slice(0, 5);
-        const drawClass = mode === 'mega' ? 'mega-draw' : 'power-draw';
-        
         let html = '';
         latest.forEach((draw) => {
-            // Format date
             const d = new Date(draw.date);
             const dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-            
-            // Build balls
-            const mainNumbers = draw.result.slice(0, 6);
-            let ballsHtml = mainNumbers.map(n => 
-                `<div class="draw-ball">${String(n).padStart(2,'0')}</div>`
-            ).join('');
-            
-            // Power 6/55 has a 7th power number
-            if (mode === 'power' && draw.result.length >= 7) {
-                ballsHtml += `<div class="draw-ball power-special">${String(draw.result[6]).padStart(2,'0')}</div>`;
-            }
+            const ballsHtml = draw.result.slice(0, 6).map(n => `<div class="draw-ball">${String(n).padStart(2,'0')}</div>`).join('');
+            const powerBall = (mode === 'power' && draw.result.length >= 7) ? `<div class="draw-ball power-special">${String(draw.result[6]).padStart(2,'0')}</div>` : '';
             
             html += `
-                <div class="draw-row ${drawClass}">
+                <div class="draw-row ${mode}-draw">
                     <div class="draw-meta">
                         <span class="draw-date">${dateStr}</span>
                         <span class="draw-id">#${draw.id || '---'}</span>
                     </div>
-                    <div class="draw-numbers">${ballsHtml}</div>
-                </div>
-            `;
+                    <div class="draw-numbers">${ballsHtml}${powerBall}</div>
+                </div>`;
         });
-        
         container.innerHTML = html;
-        
     } catch (err) {
-        console.error('Error loading draw results:', err);
-        container.innerHTML = `
-            <div class="draws-loading">
-                <span>❌ Lỗi tải dữ liệu: ${err.message}</span>
-            </div>
-        `;
+        container.innerHTML = `<div class="draws-loading"><span>❌ Lỗi tải dữ liệu.</span></div>`;
     }
 }
 
-// ===== Init =====
-document.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', () => {
+    initTheme();
     createParticles();
     updateApiStatus();
-    initTheme();
-    
-    // Auto-load latest Mega results
     showDrawResults('mega');
     
-    const inputs = document.querySelectorAll('.input-field');
-    inputs.forEach(input => {
-        input.addEventListener('focus', () => {
-            input.classList.remove('input-error');
-        });
-    });
-    
-    // Close modal on overlay click
-    document.getElementById('apiModal').addEventListener('click', (e) => {
-        if (e.target === e.currentTarget) closeApiModal();
-    });
-    
-    document.getElementById('helpModal').addEventListener('click', (e) => {
-        if (e.target === e.currentTarget) closeHelp();
-    });
-    
-    // Close modal on ESC
+    // Close modal on escape
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeApiModal();
             closeHelp();
         }
+    });
+
+    // Handle input field focus
+    document.querySelectorAll('.input-field').forEach(input => {
+        input.addEventListener('focus', () => input.classList.remove('input-error'));
     });
 });
 

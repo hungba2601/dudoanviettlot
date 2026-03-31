@@ -51,7 +51,7 @@
                     <span>Lấy API Key miễn phí tại <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com</a></span>
                 </div>
                 <div class="modal-model-info">
-                    <span class="model-chip">⚡ gemini-2.5-flash</span>
+                    <span class="model-chip">⚡ gemini-1.5-flash</span>
                     <span class="model-desc">Nhanh • Thông minh • Miễn phí</span>
                 </div>
             </div>
@@ -79,7 +79,7 @@
                     <ul>
                         <li>Dữ liệu thực tế của 100 kỳ quay gần nhất.</li>
                         <li>Thuật toán Thần số học dựa trên Tên và Ngày sinh.</li>
-                        <li>Trí tuệ nhân tạo (AI) Gemini 2.5 Flash để phân tích chuyên sâu.</li>
+                        <li>Trí tuệ nhân tạo (AI) Gemini 1.5 Flash để phân tích chuyên sâu.</li>
                     </ul>
                 </div>
                 <div class="help-section">
@@ -169,7 +169,7 @@
 
         <!-- Game Mode Selection -->
         <section class="mode-section">
-            <h2 class="section-title">Chọn loại vé</h2>
+            <h2 class="section-title">Chọn loại vé Vietlott</h2>
             <div class="mode-buttons">
                 <button class="mode-btn mega-btn" id="megaBtn" onclick="predict('mega')">
                     <div class="btn-glow"></div>
@@ -190,6 +190,47 @@
                     </div>
                     <div class="btn-shimmer"></div>
                 </button>
+            </div>
+        </section>
+
+        <!-- Lô Đề Prediction Section -->
+        <section class="mode-section lode-section" id="lodeSection">
+            <h2 class="section-title">Dự Đoán Lô Đề</h2>
+            <div class="input-card lode-card">
+                <div class="input-group">
+                    <label for="dreamInput" class="input-label">
+                        <span class="label-icon">🌙</span>
+                        Giải Mã Giấc Mơ / Hiện Tượng
+                    </label>
+                    <textarea 
+                        id="dreamInput" 
+                        class="input-field dream-textarea" 
+                        placeholder="Mô tả giấc mơ hoặc hiện tượng bạn thấy (ví dụ: thấy rắn, thấy người thân...)"
+                        rows="3"
+                    ></textarea>
+                </div>
+                
+                <div class="mode-buttons lode-buttons">
+                    <button class="mode-btn lode2-btn" id="lode2Btn" onclick="predictLode('2')">
+                        <div class="btn-glow"></div>
+                        <div class="btn-content">
+                            <span class="btn-badge">LÔ ĐỀ 2S</span>
+                            <span class="btn-range">00 - 99</span>
+                            <span class="btn-desc">Dự đoán 4 số</span>
+                        </div>
+                        <div class="btn-shimmer"></div>
+                    </button>
+
+                    <button class="mode-btn lode3-btn" id="lode3Btn" onclick="predictLode('3')">
+                        <div class="btn-glow"></div>
+                        <div class="btn-content">
+                            <span class="btn-badge">LÔ ĐỀ 3S</span>
+                            <span class="btn-range">000 - 999</span>
+                            <span class="btn-desc">Dự đoán 4 số</span>
+                        </div>
+                        <div class="btn-shimmer"></div>
+                    </button>
+                </div>
             </div>
         </section>
 

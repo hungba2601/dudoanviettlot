@@ -4,6 +4,8 @@
     --primary-light: #8B83FF;
     --mega-gradient: linear-gradient(135deg, #FF6B6B, #FF8E53, #FFC93C);
     --power-gradient: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
+    --lode2-gradient: linear-gradient(135deg, #00b09b, #96c93d);
+    --lode3-gradient: linear-gradient(135deg, #f80759, #bc4e9c);
     --bg-top: #E8F4FD;
     --bg-mid: #FDF2F8;
     --bg-bottom: #EDE9FE;
@@ -482,6 +484,35 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .mode-btn:active {
     transform: translateY(-1px) scale(0.98);
+}
+
+.lode2-btn {
+    background: var(--lode2-gradient);
+    box-shadow: 0 6px 24px rgba(0, 176, 155, 0.25);
+}
+
+.lode3-btn {
+    background: var(--lode3-gradient);
+    box-shadow: 0 6px 24px rgba(248, 7, 89, 0.25);
+}
+
+.dream-textarea {
+    resize: none;
+    line-height: 1.5;
+    background: rgba(255, 255, 255, 0.5) !important;
+}
+
+[data-theme="dark"] .dream-textarea {
+    background: rgba(15, 23, 42, 0.3) !important;
+}
+
+.lode-card {
+    border: 1px solid rgba(108, 99, 255, 0.2);
+    background: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="dark"] .lode-card {
+    background: rgba(30, 41, 59, 0.6);
 }
 
 /* ===== Error shake ===== */
