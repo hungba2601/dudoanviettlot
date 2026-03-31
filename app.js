@@ -20,7 +20,7 @@ let dataCache = {
 
 // ===== API Key Management =====
 const API_KEY_STORAGE = 'vietlott_gemini_api_key';
-const GEMINI_MODEL = 'gemini-1.5-flash';
+const GEMINI_MODEL = 'gemini-2.5-flash';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 function getApiKey() {
@@ -833,7 +833,7 @@ async function predict(mode) {
     let predictionSource = hasData ? 'data' : 'fallback';
     
     if (hasApiKey() && hasData) {
-        showLoading({ text: '🧠 Gemini AI đang phân tích...', detail: 'Gửi dữ liệu đến gemini-1.5-flash', progress: 65 });
+        showLoading({ text: '🧠 Gemini AI đang phân tích...', detail: 'Gửi dữ liệu đến gemini-2.5-flash', progress: 65 });
         const geminiResult = await callGeminiAI(name, dob, maxNum, stats, draws);
         if (geminiResult) {
             numbers = geminiResult.numbers;
