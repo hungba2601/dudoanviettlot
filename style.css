@@ -795,6 +795,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     font-style: italic;
 }
 
+.app-footer .copyright {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 12px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
 /* ===== Confetti ===== */
 .confetti-piece {
     position: fixed;
