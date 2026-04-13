@@ -20,7 +20,7 @@ let dataCache = {
 
 // ===== API Key Management =====
 const API_KEY_STORAGE = 'vietlott_gemini_api_key';
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = 'gemini-3-flash-preview';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 function getApiKey() {
@@ -512,7 +512,7 @@ function generateLocalLode(name, dob) {
     return { nums2D, nums3D, explanation: '' };
 }
 
-// ===== Call Gemini 2.5 Flash API =====
+// ===== Call Gemini 3 Flash Preview API =====
 async function callGeminiAI(name, dob, maxNum, stats, draws) {
     const apiKey = getApiKey();
     if (!apiKey) return null;
@@ -634,7 +634,7 @@ const luckyMessages = [
 const geminiMessages = [
     "Gemini AI đã phân tích và chọn số cho bạn!",
     "Trí tuệ nhân tạo Google đưa ra dự đoán!",
-    "Gemini 2.5 Flash đã xử lý dữ liệu xong!",
+    "Gemini 3 Flash Preview đã xử lý dữ liệu xong!",
 ];
 
 const fallbackMessages = [
@@ -833,7 +833,7 @@ async function predict(mode) {
     let predictionSource = hasData ? 'data' : 'fallback';
     
     if (hasApiKey() && hasData) {
-        showLoading({ text: '🧠 Gemini AI đang phân tích...', detail: 'Gửi dữ liệu đến gemini-2.5-flash', progress: 65 });
+        showLoading({ text: '🧠 Gemini AI đang phân tích...', detail: 'Gửi dữ liệu đến gemini-3-flash-preview', progress: 65 });
         const geminiResult = await callGeminiAI(name, dob, maxNum, stats, draws);
         if (geminiResult) {
             numbers = geminiResult.numbers;
