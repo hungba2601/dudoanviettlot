@@ -1073,5 +1073,81 @@ window.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.input-field').forEach(input => {
         input.addEventListener('focus', () => input.classList.remove('input-error'));
     });
+    
+    // Check if iOS and not installed
+    const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    if (isIOS && !isStandalone) {
+        const installBtn = document.getElementById('installAppBtn');
+        if (installBtn) {
+            installBtn.style.display = 'flex';
+        }
+    }
 });
+
+// ===== PWA Install Logic =====
+let deferredPrompt = null;
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent the mini-infobar from appearing on mobile
+    e.preventDefault();
+    // Stash the event so it can be triggered later.
+    deferredPrompt = e;
+    // Update UI notify the user they can install the PWA
+    const installBtn = document.getElementById('installAppBtn');
+    if (installBtn) {
+        installBtn.style.display = 'flex';
+    }
+});
+
+function installApp() {
+    if (deferredPrompt) {
+        // Show the install prompt for Android/Desktop
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                console.log('User accepted the install prompt');
+                const installBtn = document.getElementById('installAppBtn');
+                if (installBtn) installBtn.style.display = 'none';
+            } else {
+                console.log('User dismissed the install prompt');
+            }
+            deferredPrompt = null;
+        });
+    } else if (isIOS) {
+        // Show instruction modal/toast for iOS
+        showIosInstallModal();
+    } else {
+        // Already installed or not supported
+        showToast('Ứng dụng đã được cài đặt hoặc trình duyệt không hỗ trợ.', 'info');
+    }
+}
+
+function showIosInstallModal() {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay open';
+    overlay.id = 'iosInstallModal';
+    overlay.innerHTML = `
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-row">
+                    <span class="modal-icon">📱</span>
+                    <h3 class="modal-title">Cài đặt trên iOS</h3>
+                </div>
+                <button class="modal-close" onclick="document.getElementById('iosInstallModal').remove()">✕</button>
+            </div>
+            <div class="modal-body" style="text-align: center;">
+                <p style="margin-bottom: 15px;">Để cài đặt ứng dụng này trên iPhone/iPad:</p>
+                <ol style="text-align: left; margin-bottom: 20px; display: inline-block;">
+                    <li style="margin-bottom: 10px;">Nhấn vào biểu tượng <b>Chia sẻ (Share)</b> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> ở thanh công cụ Safari.</li>
+                    <li>Chọn <b>"Thêm vào MH chính" (Add to Home Screen)</b> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>.</li>
+                </ol>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn-primary full-width" onclick="document.getElementById('iosInstallModal').remove()">Đã hiểu</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
 
