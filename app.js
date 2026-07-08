@@ -1269,8 +1269,7 @@ function showUniversalInstallModal() {
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="modal-btn-secondary" onclick="document.getElementById('universalInstallModal').remove()">Đóng</button>
-                <button class="modal-btn-primary" onclick="tryOpenInChrome()">🌐 Mở Chrome</button>
+                <button class="modal-btn-secondary full-width" onclick="document.getElementById('universalInstallModal').remove()" style="width: 100%; text-align: center;">Đóng</button>
             </div>
         </div>
     `;
@@ -1314,14 +1313,4 @@ function fallbackCopy(text) {
     document.body.removeChild(textarea);
 }
 
-function tryOpenInChrome() {
-    const url = window.location.href;
-    // Try intent:// scheme for Android Chrome
-    const intentUrl = `intent://${url.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`;
-    window.location.href = intentUrl;
-    // Fallback: if intent doesn't work, just show a toast
-    setTimeout(() => {
-        showToast('💡 Hãy mở Chrome và dán link đã copy.', 'info');
-    }, 1000);
-}
 
