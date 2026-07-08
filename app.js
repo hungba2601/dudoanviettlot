@@ -1074,9 +1074,10 @@ window.addEventListener('DOMContentLoaded', () => {
         input.addEventListener('focus', () => input.classList.remove('input-error'));
     });
     
-    // Always show install button/banner when not in standalone mode (already installed)
-    const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-    if (isStandalone || localStorage.getItem('vietlott_dismiss_install') === 'true') {
+    // Always show install button/banner when not launched from its own PWA icon
+    // Using query parameter from manifest.json start_url is the most reliable way to avoid false positives when opened inside ANOTHER installed PWA
+    const isLaunchedFromOwnIcon = window.location.search.includes('mode=standalone');
+    if (isLaunchedFromOwnIcon || localStorage.getItem('vietlott_dismiss_install') === 'true') {
         const installBtn = document.getElementById('installAppBtn');
         const installBanner = document.getElementById('installBanner');
         if (installBtn) installBtn.style.display = 'none';

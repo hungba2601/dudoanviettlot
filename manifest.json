@@ -2,7 +2,7 @@
   "name": "VIETLOTT LUCKY AI",
   "short_name": "VIETLOTTAI",
   "description": "Dự đoán số may mắn VIETLOTT bằng AI và dữ liệu thực",
-  "start_url": "index.html",
+  "start_url": "index.html?mode=standalone",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
