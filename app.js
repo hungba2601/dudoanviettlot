@@ -1076,7 +1076,7 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Check if iOS and not installed
     const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-    if (isIOS && !isStandalone) {
+    if ((isIOS && !isStandalone) || isZaloBrowser()) {
         const installBtn = document.getElementById('installAppBtn');
         if (installBtn) {
             installBtn.style.display = 'flex';
@@ -1087,6 +1087,11 @@ window.addEventListener('DOMContentLoaded', () => {
 // ===== PWA Install Logic =====
 let deferredPrompt = null;
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+function isZaloBrowser() {
+    const ua = navigator.userAgent || navigator.vendor || window.opera;
+    return /Zalo/i.test(ua);
+}
 
 window.addEventListener('beforeinstallprompt', (e) => {
     // Prevent the mini-infobar from appearing on mobile
@@ -1101,6 +1106,11 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 function installApp() {
+    if (isZaloBrowser()) {
+        showZaloWarningModal();
+        return;
+    }
+
     if (deferredPrompt) {
         // Show the install prompt for Android/Desktop
         deferredPrompt.prompt();
@@ -1145,6 +1155,36 @@ function showIosInstallModal() {
             </div>
             <div class="modal-footer">
                 <button class="modal-btn-primary full-width" onclick="document.getElementById('iosInstallModal').remove()">Đã hiểu</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
+function showZaloWarningModal() {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay open';
+    overlay.id = 'zaloWarningModal';
+    overlay.innerHTML = `
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-row">
+                    <span class="modal-icon">⚠️</span>
+                    <h3 class="modal-title">Cài đặt Web App</h3>
+                </div>
+                <button class="modal-close" onclick="document.getElementById('zaloWarningModal').remove()">✕</button>
+            </div>
+            <div class="modal-body" style="text-align: center;">
+                <p style="margin-bottom: 15px; color: #ff3b30; font-weight: bold;">Trình duyệt Zalo không hỗ trợ cài đặt Web App.</p>
+                <p style="margin-bottom: 15px;">Để cài đặt ứng dụng lên màn hình chính, vui lòng mở link này bằng trình duyệt mặc định của máy (Chrome hoặc Safari).</p>
+                <ol style="text-align: left; margin-bottom: 20px; display: inline-block; font-size: 14px; line-height: 1.6;">
+                    <li style="margin-bottom: 10px;">Nhấn vào biểu tượng <b>3 chấm</b> ở góc phải trên cùng màn hình Zalo.</li>
+                    <li>Chọn <b>"Mở bằng trình duyệt"</b> (Open in browser).</li>
+                    <li style="margin-top: 10px;">Sau khi qua trình duyệt mới, nhấn nút Cài đặt để thêm vào màn hình chính.</li>
+                </ol>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn-primary full-width" onclick="document.getElementById('zaloWarningModal').remove()">Đã hiểu</button>
             </div>
         </div>
     `;
