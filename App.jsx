@@ -57,9 +57,12 @@ function App() {
   }, []);
 
   const handleInstallClick = async () => {
-    const isChrome = /Chrome/i.test(navigator.userAgent) && !/Edge|Edg|OPR|Opera|SamsungBrowser/i.test(navigator.userAgent);
+    const ua = navigator.userAgent || navigator.vendor || window.opera;
+    const isChrome = /Chrome/i.test(ua) && !/Edge|Edg|OPR|Opera|SamsungBrowser/i.test(ua);
+    const isWebView = /wv/i.test(ua);
+    const inAppBrowser = /FBAN|FBAV|Messenger|Zalo|Instagram|TikTok|BytedanceWebview/i.test(ua) || isWebView || isInAppBrowser;
 
-    if (isChrome && deferredPrompt) {
+    if (isChrome && !inAppBrowser && deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       
