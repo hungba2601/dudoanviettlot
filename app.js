@@ -1074,24 +1074,17 @@ window.addEventListener('DOMContentLoaded', () => {
         input.addEventListener('focus', () => input.classList.remove('input-error'));
     });
     
-    // Always show install button/banner when not launched from its own PWA icon
+    // Always show install button when not launched from its own PWA icon
     // Using query parameter from manifest.json start_url is the most reliable way to avoid false positives when opened inside ANOTHER installed PWA
     const isLaunchedFromOwnIcon = window.location.search.includes('mode=standalone');
-    if (isLaunchedFromOwnIcon || localStorage.getItem('vietlott_dismiss_install') === 'true') {
-        const installBtn = document.getElementById('installAppBtn');
-        const installBanner = document.getElementById('installBanner');
+    
+    const installBtn = document.getElementById('installAppBtn');
+    
+    if (isLaunchedFromOwnIcon) {
+        // Hide if opened from the installed icon
         if (installBtn) installBtn.style.display = 'none';
-        if (installBanner) installBanner.style.display = 'none';
     }
 });
-
-function dismissInstallBanner() {
-    const banner = document.getElementById('installBanner');
-    if (banner) {
-        banner.style.display = 'none';
-        localStorage.setItem('vietlott_dismiss_install', 'true');
-    }
-}
 
 // ===== PWA Install Logic =====
 let deferredPrompt = null;
@@ -1138,9 +1131,7 @@ window.addEventListener('appinstalled', () => {
     console.log('PWA was installed');
     deferredPrompt = null;
     const installBtn = document.getElementById('installAppBtn');
-    const installBanner = document.getElementById('installBanner');
     if (installBtn) installBtn.style.display = 'none';
-    if (installBanner) installBanner.style.display = 'none';
 });
 
 function installApp() {
