@@ -1262,9 +1262,10 @@ function showUniversalInstallModal() {
                     <p style="font-weight: 700; margin-bottom: 8px;">📌 Cách cài đặt:</p>
                     <ol style="padding-left: 18px;">
                         <li style="margin-bottom: 6px;">Nhấn <b>"Copy Link"</b> ở trên.</li>
-                        <li style="margin-bottom: 6px;">Mở ứng dụng <b>Chrome</b> trên điện thoại.</li>
+                        <li style="margin-bottom: 6px;">Mở trình duyệt <b>Chrome</b> (Android) hoặc <b>Safari</b> (iPhone).</li>
                         <li style="margin-bottom: 6px;">Dán link vào thanh địa chỉ và truy cập.</li>
-                        <li style="margin-bottom: 6px;">Nhấn <b>menu 3 chấm ⋮</b> → chọn <b>"Thêm vào MH chính"</b> hoặc <b>"Cài đặt ứng dụng"</b>.</li>
+                        <li style="margin-bottom: 6px;"><b>Android (Chrome):</b> Nhấn <b>menu 3 chấm ⋮</b> → <b>"Thêm vào MH chính"</b>.</li>
+                        <li style="margin-bottom: 6px;"><b>iPhone (Safari):</b> Nhấn <b>nút Chia sẻ (vuông mũi tên)</b> → <b>"Thêm vào MH chính"</b>.</li>
                     </ol>
                 </div>
             </div>
