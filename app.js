@@ -1074,9 +1074,9 @@ window.addEventListener('DOMContentLoaded', () => {
         input.addEventListener('focus', () => input.classList.remove('input-error'));
     });
     
-    // Check if iOS and not installed
+    // Always show install button when not in standalone mode (already installed)
     const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-    if ((isIOS && !isStandalone) || isZaloBrowser()) {
+    if (!isStandalone) {
         const installBtn = document.getElementById('installAppBtn');
         if (installBtn) {
             installBtn.style.display = 'flex';
@@ -1093,44 +1093,75 @@ function isZaloBrowser() {
     return /Zalo/i.test(ua);
 }
 
+function isChromeCustomTab() {
+    // Chrome Custom Tabs (CCT) are used when opening links from other apps (PWAs, social apps)
+    // They don't support beforeinstallprompt. Detect via user agent hints.
+    const ua = navigator.userAgent || '';
+    // CCT typically has Chrome in UA but no beforeinstallprompt support
+    // Also check for WebView patterns (wv, Android WebView)
+    const isAndroid = /Android/i.test(ua);
+    const isChrome = /Chrome\//.test(ua);
+    const isWebView = /wv|WebView|; wv\)/i.test(ua);
+    // If Android + Chrome + no deferredPrompt after page load, likely CCT or restricted environment
+    return isAndroid && isChrome && !isWebView && !deferredPrompt;
+}
+
+function isInAppBrowser() {
+    const ua = navigator.userAgent || '';
+    // Detect various in-app browsers: Facebook, Instagram, Twitter, LINE, Zalo, etc.
+    return /FBAN|FBAV|Instagram|Line\/|Twitter|Snapchat|Zalo|ZaloTheme|wv|WebView/i.test(ua);
+}
+
 window.addEventListener('beforeinstallprompt', (e) => {
     // Prevent the mini-infobar from appearing on mobile
     e.preventDefault();
     // Stash the event so it can be triggered later.
     deferredPrompt = e;
-    // Update UI notify the user they can install the PWA
+    // Ensure the install button is visible
     const installBtn = document.getElementById('installAppBtn');
     if (installBtn) {
         installBtn.style.display = 'flex';
     }
 });
 
-function installApp() {
-    if (isZaloBrowser()) {
-        showZaloWarningModal();
-        return;
-    }
+// Hide install button after successful installation
+window.addEventListener('appinstalled', () => {
+    console.log('PWA was installed');
+    deferredPrompt = null;
+    const installBtn = document.getElementById('installAppBtn');
+    if (installBtn) installBtn.style.display = 'none';
+});
 
+function installApp() {
+    // Priority 1: Native install prompt available (real Chrome browser)
     if (deferredPrompt) {
-        // Show the install prompt for Android/Desktop
         deferredPrompt.prompt();
         deferredPrompt.userChoice.then((choiceResult) => {
             if (choiceResult.outcome === 'accepted') {
                 console.log('User accepted the install prompt');
                 const installBtn = document.getElementById('installAppBtn');
                 if (installBtn) installBtn.style.display = 'none';
-            } else {
-                console.log('User dismissed the install prompt');
             }
             deferredPrompt = null;
         });
-    } else if (isIOS) {
-        // Show instruction modal/toast for iOS
-        showIosInstallModal();
-    } else {
-        // Already installed or not supported
-        showToast('Ứng dụng đã được cài đặt hoặc trình duyệt không hỗ trợ.', 'info');
+        return;
     }
+
+    // Priority 2: Zalo in-app browser
+    if (isZaloBrowser()) {
+        showZaloWarningModal();
+        return;
+    }
+
+    // Priority 3: iOS (Safari required)
+    if (isIOS) {
+        showIosInstallModal();
+        return;
+    }
+
+    // Priority 4: In-app browser or Chrome Custom Tab or any other restricted environment
+    // Show universal install guide with copy-link functionality
+    showUniversalInstallModal();
 }
 
 function showIosInstallModal() {
@@ -1189,5 +1220,106 @@ function showZaloWarningModal() {
         </div>
     `;
     document.body.appendChild(overlay);
+}
+
+function showUniversalInstallModal() {
+    // Remove existing modal if any
+    const existing = document.getElementById('universalInstallModal');
+    if (existing) existing.remove();
+
+    const currentUrl = window.location.href;
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay open';
+    overlay.id = 'universalInstallModal';
+    overlay.innerHTML = `
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-row">
+                    <span class="modal-icon">📲</span>
+                    <h3 class="modal-title">Cài đặt ứng dụng</h3>
+                </div>
+                <button class="modal-close" onclick="document.getElementById('universalInstallModal').remove()">✕</button>
+            </div>
+            <div class="modal-body" style="text-align: center;">
+                <p style="margin-bottom: 12px; color: #f59e0b; font-weight: bold; font-size: 14px;">⚠️ Bạn đang mở trong trình duyệt nhúng</p>
+                <p style="margin-bottom: 16px; font-size: 13px; color: var(--text-secondary); line-height: 1.5;">Trình duyệt này không hỗ trợ cài đặt trực tiếp. Vui lòng mở bằng <b>Chrome</b> hoặc <b>Safari</b> để cài app.</p>
+                
+                <div style="background: rgba(108,99,255,0.08); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+                    <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 8px;">Link ứng dụng:</p>
+                    <div style="display: flex; align-items: center; gap: 8px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px;">
+                        <span style="flex: 1; font-size: 12px; color: var(--text-primary); word-break: break-all; text-align: left;" id="installUrlText">${currentUrl}</span>
+                    </div>
+                </div>
+
+                <button class="modal-btn-primary full-width" onclick="copyInstallUrl()" id="copyUrlBtn" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    📋 Copy Link
+                </button>
+
+                <div style="text-align: left; font-size: 13px; line-height: 1.7; color: var(--text-secondary);">
+                    <p style="font-weight: 700; margin-bottom: 8px;">📌 Cách cài đặt:</p>
+                    <ol style="padding-left: 18px;">
+                        <li style="margin-bottom: 6px;">Nhấn <b>"Copy Link"</b> ở trên.</li>
+                        <li style="margin-bottom: 6px;">Mở ứng dụng <b>Chrome</b> trên điện thoại.</li>
+                        <li style="margin-bottom: 6px;">Dán link vào thanh địa chỉ và truy cập.</li>
+                        <li style="margin-bottom: 6px;">Nhấn <b>menu 3 chấm ⋮</b> → chọn <b>"Thêm vào MH chính"</b> hoặc <b>"Cài đặt ứng dụng"</b>.</li>
+                    </ol>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn-secondary" onclick="document.getElementById('universalInstallModal').remove()">Đóng</button>
+                <button class="modal-btn-primary" onclick="tryOpenInChrome()">🌐 Mở Chrome</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
+function copyInstallUrl() {
+    const url = window.location.href;
+    const btn = document.getElementById('copyUrlBtn');
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+            btn.innerHTML = '✅ Đã copy!';
+            btn.style.background = 'linear-gradient(135deg, #22C55E, #16A34A)';
+            showToast('✅ Đã copy link!', 'success');
+            setTimeout(() => {
+                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> 📋 Copy Link';
+                btn.style.background = '';
+            }, 2000);
+        }).catch(() => {
+            fallbackCopy(url);
+        });
+    } else {
+        fallbackCopy(url);
+    }
+}
+
+function fallbackCopy(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        showToast('✅ Đã copy link!', 'success');
+    } catch {
+        showToast('⚠️ Không thể copy. Vui lòng copy thủ công.', 'error');
+    }
+    document.body.removeChild(textarea);
+}
+
+function tryOpenInChrome() {
+    const url = window.location.href;
+    // Try intent:// scheme for Android Chrome
+    const intentUrl = `intent://${url.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`;
+    window.location.href = intentUrl;
+    // Fallback: if intent doesn't work, just show a toast
+    setTimeout(() => {
+        showToast('💡 Hãy mở Chrome và dán link đã copy.', 'info');
+    }, 1000);
 }
 

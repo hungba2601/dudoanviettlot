@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vietlott-lucky-v2';
+const CACHE_NAME = 'vietlott-lucky-v3';
 const ASSETS = [
   './',
   './index.html',
