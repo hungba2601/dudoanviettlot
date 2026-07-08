@@ -108,7 +108,7 @@
             <!-- Header Controls -->
             <div class="header-controls">
                 <!-- Install App Button -->
-                <button class="control-btn install-btn" id="installAppBtn" onclick="installApp()" title="Cài đặt ứng dụng" style="display: none;">
+                <button class="control-btn install-btn" id="installAppBtn" onclick="installApp()" title="Cài đặt ứng dụng">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                         <polyline points="7 10 12 15 17 10"/>
@@ -142,6 +142,19 @@
                 <p class="app-subtitle">Dữ liệu thực 100 kỳ + Gemini AI</p>
             </div>
         </header>
+
+        <!-- Install App Banner - Always visible, hidden by JS when already installed -->
+        <section class="install-banner" id="installBanner">
+            <div class="install-banner-content">
+                <div class="install-banner-icon">📲</div>
+                <div class="install-banner-text">
+                    <strong>Cài đặt ứng dụng</strong>
+                    <span>Thêm vào màn hình chính để trải nghiệm tốt hơn</span>
+                </div>
+                <button class="install-banner-btn" onclick="installApp()">Cài đặt</button>
+            </div>
+            <button class="install-banner-close" onclick="dismissInstallBanner()" title="Đóng">✕</button>
+        </section>
 
         <!-- Input Section -->
         <section class="input-section">

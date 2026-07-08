@@ -1074,15 +1074,23 @@ window.addEventListener('DOMContentLoaded', () => {
         input.addEventListener('focus', () => input.classList.remove('input-error'));
     });
     
-    // Always show install button when not in standalone mode (already installed)
+    // Always show install button/banner when not in standalone mode (already installed)
     const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-    if (!isStandalone) {
+    if (isStandalone || localStorage.getItem('vietlott_dismiss_install') === 'true') {
         const installBtn = document.getElementById('installAppBtn');
-        if (installBtn) {
-            installBtn.style.display = 'flex';
-        }
+        const installBanner = document.getElementById('installBanner');
+        if (installBtn) installBtn.style.display = 'none';
+        if (installBanner) installBanner.style.display = 'none';
     }
 });
+
+function dismissInstallBanner() {
+    const banner = document.getElementById('installBanner');
+    if (banner) {
+        banner.style.display = 'none';
+        localStorage.setItem('vietlott_dismiss_install', 'true');
+    }
+}
 
 // ===== PWA Install Logic =====
 let deferredPrompt = null;
@@ -1129,7 +1137,9 @@ window.addEventListener('appinstalled', () => {
     console.log('PWA was installed');
     deferredPrompt = null;
     const installBtn = document.getElementById('installAppBtn');
+    const installBanner = document.getElementById('installBanner');
     if (installBtn) installBtn.style.display = 'none';
+    if (installBanner) installBanner.style.display = 'none';
 });
 
 function installApp() {

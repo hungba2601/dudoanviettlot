@@ -268,6 +268,86 @@ body::after {
     letter-spacing: 0.5px;
 }
 
+/* ===== Install Banner ===== */
+.install-banner {
+    background: linear-gradient(135deg, rgba(108, 99, 255, 0.1), rgba(0, 210, 255, 0.1));
+    border: 1px solid rgba(108, 99, 255, 0.2);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    animation: fadeSlideDown 0.8s ease-out 0.1s both;
+    position: relative;
+    box-shadow: 0 4px 15px rgba(108, 99, 255, 0.05);
+}
+
+[data-theme="dark"] .install-banner {
+    background: linear-gradient(135deg, rgba(108, 99, 255, 0.15), rgba(0, 210, 255, 0.15));
+    border-color: rgba(108, 99, 255, 0.3);
+}
+
+.install-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.install-banner-icon {
+    font-size: 28px;
+}
+
+.install-banner-text {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.install-banner-text strong {
+    font-size: 14px;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.install-banner-text span {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.install-banner-btn {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(108, 99, 255, 0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+    white-space: nowrap;
+}
+
+.install-banner-btn:active {
+    transform: scale(0.95);
+}
+
+.install-banner-close {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px;
+    margin-left: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* ===== Input Section ===== */
 .input-section {
     animation: fadeSlideUp 0.8s ease-out 0.2s both;
